@@ -86,7 +86,7 @@ python examples/streaming.py   --frames path/to/video.mp4 --out outputs/streamin
 Or try them on the samples in `examples/data`, the inputs of the animations above:
 
 ```bash
-python examples/offline.py   --images examples/data/park --out outputs/offline
+python examples/offline.py   --images examples/data/park --out outputs/offline --sky-mask
 python examples/streaming.py --frames examples/data/desk --out outputs/streaming
 ```
 
