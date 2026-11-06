@@ -12,6 +12,7 @@
   <a href="https://arxiv.org/abs/2611.02857"><img src="https://img.shields.io/badge/arXiv-2611.02857-b31b1b.svg" alt="arXiv"></a>
   <a href="https://ubc-vision.github.io/solv3r/"><img src="https://img.shields.io/badge/Project-Page-1f72b1.svg" alt="Project Page"></a>
   <a href="https://huggingface.co/jgkwak/solv3r"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow" alt="Hugging Face Model"></a>
+  <a href="https://huggingface.co/papers/2611.02857"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-orange" alt="Hugging Face Paper"></a>
 </p>
 
 [![One Solv3R solver for offline, streaming, and any-order reconstruction](assets/teaser.gif)](https://ubc-vision.github.io/solv3r/)
