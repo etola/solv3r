@@ -12,13 +12,14 @@
   <a href="https://arxiv.org/abs/2611.02857"><img src="https://img.shields.io/badge/arXiv-2611.02857-b31b1b.svg" alt="arXiv"></a>
   <a href="https://ubc-vision.github.io/solv3r/"><img src="https://img.shields.io/badge/Project-Page-1f72b1.svg" alt="Project Page"></a>
   <a href="https://huggingface.co/jgkwak/solv3r"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-yellow" alt="Hugging Face Model"></a>
-  <a href="https://huggingface.co/papers/2611.02857"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-orange" alt="Hugging Face Paper"></a>
+  <a href="https://huggingface.co/spaces/jgkwak/solv3r"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-8a4fff" alt="Hugging Face Demo"></a>
 </p>
 
 [![One Solv3R solver for offline, streaming, and any-order reconstruction](assets/teaser.gif)](https://ubc-vision.github.io/solv3r/)
 
 ## News
 
+- **[2026-11-10]** An interactive demo is now available on [🤗 HuggingFace Space](https://huggingface.co/spaces/jgkwak/solv3r)!
 - **[2026-11-05]** Inference and evaluation code and the pretrained weights are released.
 - **[2026-11-02]** [Solv3R][paper] is now available on arXiv! Code and models will be released within a week.
 
@@ -31,8 +32,8 @@
 - [x] Release evaluation code for the offline benchmark (Table 1).
 - [x] Release evaluation code for the streaming benchmarks (Tables 3 and 8).
 - [x] Release evaluation code for map-based relocalization (Table 2).
+- [x] Release demo.
 - [ ] Release solver property examples.
-- [ ] Release demo.
 
 ## Installation
 
@@ -42,7 +43,7 @@ conda create -n solv3r python=3.11 -y && conda activate solv3r
 pip install -e .
 ```
 
-The pretrained model is on [🤗 Hugging Face](https://huggingface.co/jgkwak/solv3r).
+The pretrained model is on [🤗 HuggingFace](https://huggingface.co/jgkwak/solv3r).
 `Solv3R.from_pretrained()` downloads it to the Hugging Face cache on first use, or uses `checkpoints/solv3r.safetensors` if you place it there.
 
 ## Quick start
@@ -75,29 +76,42 @@ z = model.solve(ctx, calls=8, z=z)                     # all views are updated, 
 </p>
 
 Each script takes a folder of images or a video, and writes the cameras and depth maps (`.npz`), a point cloud (`.ply`)
-and a viewer that opens in the browser (`.html`).
+and a viewer that opens in the browser and plays the solve (`.html`).
 
 ```bash
 python examples/offline.py     --images path/to/images --out outputs/offline      # all images at once
 python examples/incremental.py --images path/to/images --out outputs/incremental  # groups of images join the solve
-python examples/any_order.py   --images path/to/images --out outputs/any_order    # groups join in a random order
 python examples/streaming.py   --frames path/to/video.mp4 --out outputs/streaming # video frames, one at a time
 ```
 
 Or try them on the samples in `examples/data`, the inputs of the animations above:
 
 ```bash
-python examples/offline.py   --images examples/data/park --out outputs/offline --sky-mask
-python examples/streaming.py --frames examples/data/desk --out outputs/streaming
+python examples/offline.py     --images examples/data/park --out outputs/offline --sky-mask
+python examples/incremental.py --images examples/data/sofas --out outputs/incremental --initial 8 --group 10 --calls 12
+python examples/streaming.py   --frames examples/data/desk --out outputs/streaming
 ```
 
 `--adaptive 0.02` stops the offline solve once the state settles, `--config L4` or `S4` selects a lighter streaming
-setting from paper Table 8, and `--sky-mask` leaves the sky out of outdoor point clouds.
+setting from paper Table 8, `--memory-stride 16` keeps the paper's streaming memory for short videos (faster; by default
+short videos keep more frames in memory), and `--sky-mask` leaves the sky out of outdoor point clouds.
 A result can also be rendered as a short video (`--aerial` for drone photos):
 
 ```bash
 python examples/render_video.py --input outputs/offline/solve --out outputs/offline/solve.mp4 --aerial
 ```
+
+## Demo
+
+Solve your own scenes in the interactive demo on [🤗 HuggingFace Space](https://huggingface.co/spaces/jgkwak/solv3r), or run it locally:
+
+```bash
+pip install -e ".[demo]"
+python demo/app.py            # http://127.0.0.1:7860
+```
+
+Solve photos or a video offline, incrementally or as a stream, watch the solve call by call, keep solving from the
+result, and export the point cloud (`.ply`), a COLMAP model or the cameras and depth maps.
 
 ## Evaluation
 

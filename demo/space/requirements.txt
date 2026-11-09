@@ -1,0 +1,10 @@
+torch==2.9.1
+torchvision==0.24.1
+huggingface_hub
+safetensors
+numpy
+onnxruntime
+opencv-python
+scipy
+spaces
+pillow-heif

@@ -100,10 +100,15 @@ class Solv3R(nn.Module):
                 raise FileNotFoundError(f"no checkpoint file at {checkpoint}")
             from huggingface_hub import hf_hub_download
 
+            try:                                    # the Hub counts a model's downloads by the requests for its config.json
+                hf_hub_download(checkpoint, "config.json")
+            except Exception:  # noqa: BLE001       (a repo without one still loads)
+                pass
             checkpoint = hf_hub_download(checkpoint, WEIGHTS_FILE)
         model = cls()
         model.load_state_dict(remap_checkpoint(load_file(checkpoint)), strict=True)
         model.requires_grad_(False)
+        model.source = os.path.abspath(checkpoint)       # the weights file that was loaded
         return model.eval().to(device)
 
     @property

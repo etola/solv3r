@@ -127,12 +127,29 @@ def score(out_dir, task, seqs):
 
 
 # ---------------------------------------------------------------------- run
+def weights_id(model):
+    """The weights file a prediction was made with: its path, size and modification time."""
+    st = os.stat(model.source)
+    return f"{model.source}:{st.st_size}:{int(st.st_mtime)}"
+
+
+def saved(d, weights, depth, n):
+    """A sequence's saved prediction can be reused: same weights, same number of frames, depth if asked for."""
+    try:
+        s = json.load(open(f"{d}/stats.json"))
+    except (OSError, ValueError):
+        return False
+    return os.path.isfile(f"{d}/pred.npz") and s.get("weights") == weights and s.get("frames") == n and (s.get("depth") or not depth)
+
+
 def run(model, seqs, out_dir, task, config, depth=False):
     from solv3r.streaming import run_stream
 
+    weights, reused = weights_id(model), 0
     for name, frames, _ in seqs:
         d = f"{out_dir}/{task}/{name}"
-        if os.path.isfile(f"{d}/pred.npz"):
+        if saved(d, weights, depth, len(frames)):
+            reused += 1
             continue
         torch.cuda.reset_peak_memory_stats()
         res = run_stream(model, load_images(frames), config, depth=depth)
@@ -140,8 +157,11 @@ def run(model, seqs, out_dir, task, config, depth=False):
         extra = dict(depth=res.depth, depth_conf=res.depth_conf) if depth else {}
         np.savez(f"{d}/pred.npz", c2w=res.c2w, c2w_exit=res.c2w_exit, intrinsics=res.intrinsics, **extra)
         json.dump(dict(frames=len(frames), ms_per_frame=res.ms_per_frame, refresh_rate=float(np.mean(res.refreshed)),
-                       peak_gpu_gb=torch.cuda.max_memory_allocated() / 2 ** 30), open(f"{d}/stats.json", "w"))
+                       peak_gpu_gb=torch.cuda.max_memory_allocated() / 2 ** 30, weights=weights, depth=depth),
+                  open(f"{d}/stats.json", "w"))
         print(f"{task}/{name}: {len(frames)} frames, {res.ms_per_frame:.1f} ms/frame (solver)", flush=True)
+    if reused:
+        print(f"{task}: reused {reused} saved predictions in {out_dir}/{task} (same weights and options)", flush=True)
 
 
 def main():

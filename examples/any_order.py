@@ -27,6 +27,8 @@ def main():
     ap.add_argument("--calls", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--sky-mask", action="store_true", help="leave the sky out of the point cloud (outdoor captures)")
+    ap.add_argument("--keep", type=float, default=1.0, help="fraction of the points in the .ply, the most confident first "
+                    "(1: all; points on depth edges always leave), as the demo's confidence filtering")
     ap.add_argument("--every-stage", action="store_true", help="also save the solve after every stage")
     a = ap.parse_args()
 
@@ -37,7 +39,7 @@ def main():
     rest = np.random.default_rng(a.seed).permutation([i for i in range(n) if i not in first]).tolist()
     stages = [first] + [rest[s:s + a.group] for s in range(0, len(rest), a.group)]
     solve_in_stages(model, load_images(paths), stages, a.calls, a.out, [os.path.basename(p) for p in paths], a.sky_mask,
-                    a.every_stage)
+                    a.every_stage, os.path.basename(os.path.normpath(a.images)), a.keep)
 
 
 if __name__ == "__main__":

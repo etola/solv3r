@@ -298,12 +298,14 @@ def run_scene(model, net, root, dataset, scene, out_dir):
     N = len(mi)
 
     ret_file = os.path.join(out_dir, "retrieval", f"{dataset}_{scene}.json")
-    if os.path.isfile(ret_file):
-        top = json.load(open(ret_file))["top10"]
+    map_paths, query_paths = [train[i][0] for i in mi], [test[q][0] for q in qs]
+    old = json.load(open(ret_file)) if os.path.isfile(ret_file) else {}
+    if old.get("map") == map_paths and old.get("queries") == query_paths:      # saved for the same images
+        top = old["top10"]
     else:
-        top = retrieve(net, [train[i][0] for i in mi], [test[q][0] for q in qs], 1024 if dataset == "cambridge" else 0)
+        top = retrieve(net, map_paths, query_paths, 1024 if dataset == "cambridge" else 0)
         os.makedirs(os.path.dirname(ret_file), exist_ok=True)
-        json.dump(dict(map=[train[i][0] for i in mi], queries=[test[q][0] for q in qs], top10=top), open(ret_file, "w"))
+        json.dump(dict(map=map_paths, queries=query_paths, top10=top), open(ret_file, "w"))
     cover = list(dict.fromkeys([0] + np.linspace(0, N - 1, N_COVER).round().astype(int).tolist()))
 
     torch.cuda.reset_peak_memory_stats()

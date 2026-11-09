@@ -23,10 +23,14 @@ dependencies = [
 
 [project.optional-dependencies]
 eval = ["dvlt @ git+https://github.com/nv-tlabs/dvlt@f59bb18259ab446a7585c4f47731a77cfdefa426"]
+demo = ["gradio>=6"]
 
 [project.urls]
 Homepage = "https://ubc-vision.github.io/solv3r/"
 Repository = "https://github.com/ubc-vision/solv3r"
 
 [tool.setuptools]
-packages = ["solv3r", "solv3r.network"]
+packages = ["solv3r", "solv3r.network", "solv3r.viewer"]
+
+[tool.setuptools.package-data]
+"solv3r.viewer" = ["*.js", "*.css"]

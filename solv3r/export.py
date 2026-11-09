@@ -97,9 +97,10 @@ def unproject(depth, c2w, K):
     return np.einsum("sij,shwj->shwi", c2w[:, :3, :3], cam) + c2w[:, None, None, :3, 3]
 
 
-def save_solve(prefix, images, pred, names=None, keep=0.5, sky=False, html=False):
-    """Saves a decoded solve (Solv3R.decode) as <prefix>.npz (c2w, K, depth, depth_conf) and <prefix>.ply.
-    sky=True leaves the sky out of the point cloud (sky_mask). html=True also writes the viewer <prefix>.html."""
+def save_solve(prefix, images, pred, names=None, keep=1.0, sky=False, html=False, view_keep=1.0):
+    """Saves a decoded solve (Solv3R.decode) as <prefix>.npz (c2w, K, depth, depth_conf) and <prefix>.ply, the points the
+    viewer shows (scene_points; view_keep: meta["view_keep"] of the viewer's pack). sky=True leaves the sky out.
+    html=True also writes a simple viewer <prefix>.html (the examples write the demo's viewer with solv3r.viewer)."""
     from .model import cameras_from_pose_enc
 
     hw = tuple(pred["depth"].shape[1:3])
@@ -108,8 +109,7 @@ def save_solve(prefix, images, pred, names=None, keep=0.5, sky=False, html=False
     conf = pred["depth_conf"].float().cpu().numpy()
     np.savez_compressed(f"{prefix}.npz", c2w=c2w.numpy(), K=K.numpy(), depth=depth.astype(np.float16),
                         depth_conf=conf.astype(np.float16), **({"names": np.array(names)} if names else {}))
-    valid = ~sky_mask(images) if sky else None
-    xyz, rgb = confident_points(pred["world_points"].float().cpu().numpy(), conf, images, keep, valid)
+    xyz, rgb = scene_points(pred["world_points"].float().cpu().numpy(), conf, depth, images, keep, sky, view_keep)
     write_ply(f"{prefix}.ply", xyz, rgb)
     if html:
         write_html(f"{prefix}.html", xyz, rgb, c2w.numpy(), title=os.path.basename(prefix))
@@ -123,6 +123,16 @@ def sky_mask(images):
     with warnings.catch_warnings():                       # the CPU build of onnxruntime has no CUDA provider to offer
         warnings.filterwarnings("ignore", message="Specified provider 'CUDAExecutionProvider'")
         return segment_sky(torch.as_tensor(images).float().cpu())
+
+
+def scene_points(points, conf, depth, images, keep=1.0, sky=False, view_keep=1.0):
+    """Points (S, H, W, 3) and their colours as the viewer shows them, at every pixel (solv3r.viewer.pack.solve_export):
+    no depth edges ("flying pixels"), no sky (sky=True), no stray far points, of each view its most confident view_keep
+    share (the viewer's point budget), then the scene's most confident `keep` share (its confidence filtering; 1: all).
+    images (S, 3, H, W) in [0, 1], depth (S, H, W)."""
+    from .viewer.pack import solve_export
+
+    return solve_export(points, conf, depth, images, view_keep, keep, sky)
 
 
 def confident_points(points, conf, images, keep=0.5, valid=None):
